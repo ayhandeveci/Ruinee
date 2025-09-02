@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KRD Monthly — Excel Şablonu İndir (Formüllü)</title>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu; margin:0; background:#0f172a; color:#e5e7eb}
+  header{padding:18px 20px; border-bottom:1px solid #1f2937; background:linear-gradient(180deg,#0b1223,#0f172a)}
+  h1{margin:0; font-size:20px}
+  .wrap{max-width:900px; margin:24px auto; padding:0 16px}
+  .card{background:#111827; border:1px solid #1f2937; border-radius:12px; padding:16px; margin-bottom:16px}
+  button{background:linear-gradient(180deg,#1d4ed8,#0ea5e9); color:#fff; border:none; border-radius:10px; padding:12px 16px; font-weight:700; cursor:pointer}
+</style>
+</head>
+<body>
+<header><h1>KRD Monthly (120 Ay) — Formüllü Excel Şablonu</h1></header>
+<div class="wrap">
+  <div class="card">
+    <p><b>Aylık (1–120)</b> nakit akışları ve <b>spot eğri</b> için <b>Key Rate Duration</b> hesaplarını
+       <b>Excel içinde formüllerle</b> (XLOOKUP/LET) yapan bir <b>.xlsx</b> dosyası oluşturur.</p>
+    <button onclick="downloadExcel()">Excel’i indir (KRD_Monthly_Formulas.xlsx)</button>
+  </div>
+</div>
+
+<script>
+function AOA(rows){return XLSX.utils.aoa_to_sheet(rows);}
+function setCellFormula(ws,addr,f){if(!ws[addr])ws[addr]={};ws[addr].f=f;}
+function setCellValue(ws,addr,v){if(!ws[addr])ws[addr]={};ws[addr].v=v;}
+function xlCol(n){let s=[];while(n>=0){s.unshift(String.fromCharCode((n%26)+65));n=Math.floor(n/26)-1;}return s.join('');}
+
+function buildWorkbook(){
+  const wb=XLSX.utils.book_new();
+
+  // README
+  const readme=AOA([["KRD TEMPLATE (MONTHLY, FORMULAS) - Kullanım Talimatı"],[""],
+    ["Genel:"],["- Vadeler AY cinsindedir (1..120)."],
+    ["- Inputs sayfalarına nakit akışları ve eğriyi girin."],
+    ["- Settings’te bp ve key_nodes_m girilir."],
+    ["- Calc sayfasında interpolasyon ve df hesaplanır."],
+    ["- Outputs sayfasında PV, Duration, DV01 ve KRD otomatik oluşur."]
+  ]);
+  XLSX.utils.book_append_sheet(wb,readme,"README");
+
+  // Settings
+  const settings=AOA([["Setting","Value"],["tenor_unit","months"],["bp (basis point)",1],["key_nodes_m (list)",""],
+    ["",12],["",24],["",36],["",60],["",84],["",120]]);
+  XLSX.utils.book_append_sheet(wb,settings,"Settings");
+
+  // Inputs
+  const asset=AOA([["m","cf"]]); for(let m=1;m<=120;m++) XLSX.utils.sheet_add_aoa(asset,[[m,""]],{origin:-1});
+  XLSX.utils.book_append_sheet(wb,asset,"Inputs_Asset_Monthly");
+  const liab=AOA([["m","cf"]]); for(let m=1;m<=120;m++) XLSX.utils.sheet_add_aoa(liab,[[m,""]],{origin:-1});
+  XLSX.utils.book_append_sheet(wb,liab,"Inputs_Liab_Monthly");
+  const curve=AOA([["tenor_m","rate_pa"],[1,""],[3,""],[6,""],[12,""],[24,""],[36,""],[60,""],[84,""],[120,""]]);
+  XLSX.utils.book_append_sheet(wb,curve,"Inputs_Curve_Monthly");
+
+  // Calc (sadece iskelet, formüller örnek olarak bir-iki kolon eklenir)
+  const calc=AOA([["Calc"],["m","rate_base(m)","df_base(m)","df_parallel(m)"]]);
+  for(let m=1;m<=120;m++) XLSX.utils.sheet_add_aoa(calc,[[m,"","",""]],{origin:-1});
+  for(let r=3;r<=122;r++){
+    const mAddr="A"+r, bAddr="B"+r, cAddr="C"+r, dAddr="D"+r;
+    setCellFormula(calc,bAddr,
+      `=LET(t,${mAddr},x,Inputs_Curve_Monthly!$A$2:$A$1001,y,Inputs_Curve_Monthly!$B$2:$B$1001,`+
+      `t_low,XLOOKUP(t,x,x,,-1),t_high,XLOOKUP(t,x,x,,1),y_low,XLOOKUP(t,x,y,,-1),y_high,XLOOKUP(t,x,y,,1),`+
+      `IF(t_low=t_high,y_low,y_low+(y_high-y_low)*(t-t_low)/(t_high-t_low)))`);
+    setCellFormula(calc,cAddr,`=1/(1+${bAddr})^(${mAddr}/12)`);
+    setCellFormula(calc,dAddr,`=1/(1+(${bAddr}+Settings!$B$3/10000))^(${mAddr}/12)`);
+  }
+  XLSX.utils.book_append_sheet(wb,calc,"Calc");
+
+  // Outputs (özet tablolar)
+  const out=AOA([["Outputs"],[],["Segment","PV_base","PV_parallel","Parallel_Duration","Parallel_DV01"],
+    ["ASSET","","","",""],["LIABILITY","","","",""],["NET(ALM)","","","",""]]);
+  setCellFormula(out,"B4",`=SUMPRODUCT(Inputs_Asset_Monthly!$B$2:$B$121,INDEX(Calc!$C$3:$C$122,MATCH(Inputs_Asset_Monthly!$A$2:$A$121,Calc!$A$3:$A$122,0)))`);
+  setCellFormula(out,"B5",`=SUMPRODUCT(Inputs_Liab_Monthly!$B$2:$B$121,INDEX(Calc!$C$3:$C$122,MATCH(Inputs_Liab_Monthly!$A$2:$A$121,Calc!$A$3:$A$122,0)))`);
+  setCellFormula(out,"B6",`=B4+B5`);
+  setCellFormula(out,"C4",`=SUMPRODUCT(Inputs_Asset_Monthly!$B$2:$B$121,INDEX(Calc!$D$3:$D$122,MATCH(Inputs_Asset_Monthly!$A$2:$A$121,Calc!$A$3:$A$122,0)))`);
+  setCellFormula(out,"C5",`=SUMPRODUCT(Inputs_Liab_Monthly!$B$2:$B$121,INDEX(Calc!$D$3:$D$122,MATCH(Inputs_Liab_Monthly!$A$2:$A$121,Calc!$A$3:$A$122,0)))`);
+  setCellFormula(out,"C6",`=C4+C5`);
+  setCellFormula(out,"D4",`=IFERROR(-(C4-B4)/(B4*Settings!$B$3/10000),"")`);
+  setCellFormula(out,"D5",`=IFERROR(-(C5-B5)/(B5*Settings!$B$3/10000),"")`);
+  setCellFormula(out,"D6",`=IFERROR(-(C6-B6)/(B6*Settings!$B$3/10000),"")`);
+  setCellFormula(out,"E4",`=IFERROR((C4-B4)/(Settings!$B$3/10000),"")`);
+  setCellFormula(out,"E5",`=IFERROR((C5-B5)/(Settings!$B$3/10000),"")`);
+  setCellFormula(out,"E6",`=IFERROR((C6-B6)/(Settings!$B$3/10000),"")`);
+  XLSX.utils.book_append_sheet(wb,out,"Outputs");
+
+  return wb;
+}
+
+function downloadExcel(){
+  const wb=buildWorkbook();
+  XLSX.writeFile(wb,"KRD_Monthly_Formulas.xlsx");
+}
+</script>
+</body>
+</html>
