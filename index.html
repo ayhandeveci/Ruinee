@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>İflas Ağacı (Discrete-Time) — ψ(t;u)</title>
+<title>İflas Teorisi Playground — ψ(t;u) (Discrete-Time)</title>
 <style>
   :root{--bg:#0f172a;--panel:#111827;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--ok:#10b981;--bad:#ef4444;--accent:#2563eb}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,Segoe UI,Roboto,Arial}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial}
   header{padding:14px 16px;border-bottom:1px solid #1f2937;background:#0b1220}
   h1{margin:0;font-size:18px}
   .wrap{display:grid;grid-template-columns:360px 1fr;min-height:100vh}
   .left{padding:14px;border-right:1px solid #1f2937;background:var(--panel)}
-  .right{padding:16px;display:grid;grid-template-rows:auto 180px 1fr;gap:12px}
+  .right{padding:16px;display:grid;grid-template-rows:auto auto 1fr;gap:12px}
   fieldset{border:1px solid #1f2937;border-radius:10px;padding:10px 12px;margin:0 0 12px}
   legend{color:var(--muted);padding:0 6px}
   label{display:block;margin:6px 0 4px}
@@ -30,7 +30,7 @@
   .legend{display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap}
   .dot{width:10px;height:10px;border-radius:50%}
   .dot.root{background:#60a5fa}.dot.child{background:#34d399}.dot.leaf{background:#a78bfa}.dot.ruin{background:#ef4444}
-  svg{width:100%;height:420px;background:#0b1220;border:1px solid #253047;border-radius:10px}
+  svg{width:100%;height:430px;background:#0b1220;border:1px solid #253047;border-radius:10px}
   .node{paint-order:stroke;stroke:#0008;stroke-width:1.5px}
   .lab{font:12px sans-serif;fill:#d1d5db}
   .edge{stroke:#475569;stroke-width:1.5px}
@@ -40,11 +40,14 @@
   .panel h3{margin:0 0 8px 0;font-size:14px;color:#cbd5e1}
   .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
   .small{font-size:13px}
+  .badge{display:inline-block;padding:2px 6px;border-radius:6px;background:#1f2937;border:1px solid #334155;margin-left:6px}
+  .good{color:#10b981}.warn2{color:#f59e0b}.bad2{color:#ef4444}
 </style>
 </head>
 <body>
-<header><h1>İflas Ağacı — ψ(t;u) (Discrete-Time, tek adım dallanma)</h1></header>
+<header><h1>İflas Teorisi Playground — ψ(t;u) (Discrete-Time)</h1></header>
 <div class="wrap">
+  <!-- LEFT -->
   <section class="left">
     <fieldset>
       <legend>Parametreler</legend>
@@ -83,10 +86,53 @@
         <div class="dot ruin"></div><span class="muted">Doğrudan iflas ψ(1;u)</span>
       </div>
     </fieldset>
+
+    <fieldset>
+      <legend>Oyunlaştırma</legend>
+      <div class="small">Hedef Modu, Tahmin & Kontrol ve Senaryo Kartları.</div>
+
+      <div style="margin-top:8px" class="panel">
+        <h3>Hedef Modu <span class="badge">ψ(t;u) ≤ α ⇒ min u</span></h3>
+        <div class="row">
+          <div><label>Ufuk t</label><input id="tg_t" type="number" value="5" min="1" step="1"></div>
+          <div><label>Eşik α</label><input id="tg_a" type="number" value="0.010" step="0.001" min="0" max="1"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
+          <button class="btn primary" id="btnTarget">Minimum u’yu bul</button>
+          <span id="tg_out" class="muted"></span>
+        </div>
+      </div>
+
+      <div style="margin-top:8px" class="panel">
+        <h3>Tahmin & Kontrol <span class="badge">sezgi eğitimi</span></h3>
+        <div class="row">
+          <div><label>u</label><input id="guess_u" type="number" value="2" min="0" step="1"></div>
+          <div><label>t</label><input id="guess_t" type="number" value="2" min="1" step="1"></div>
+        </div>
+        <div class="row">
+          <div><label>Tahminin (ψ)</label><input id="guess_val" type="number" value="0.200" step="0.001" min="0" max="1"></div>
+          <div style="display:flex;align-items:end"><button class="btn" id="btnGuess">Kontrol Et</button></div>
+        </div>
+        <div id="guess_out" class="muted" style="margin-top:6px"></div>
+      </div>
+
+      <div style="margin-top:8px" class="panel">
+        <h3>Senaryo Kartları <span class="badge">hazır dağılım</span></h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn" data-scn="light">Hafif Kuyruk</button>
+          <button class="btn" data-scn="mid">Orta Kuyruk</button>
+          <button class="btn" data-scn="heavy">Ağır Kuyruk</button>
+          <button class="btn" data-scn="cat">Felaket Kuyruk</button>
+        </div>
+        <div class="muted small" style="margin-top:6px">Kart tıklayınca f<sub>X</sub>(j) güncellenir, tablo normalize edilir.</div>
+      </div>
+    </fieldset>
+
   </section>
 
+  <!-- RIGHT -->
   <section class="right">
-    <svg id="svg" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet"></svg>
+    <svg id="svg" viewBox="0 0 900 430" preserveAspectRatio="xMidYMid meet"></svg>
 
     <div class="panel">
       <h3>Yorum (Hesap Açıklaması)</h3>
@@ -101,12 +147,13 @@
 </div>
 
 <script>
-/* ---------- state ---------- */
+/* ================== State ================== */
 let probs = [0.5,0.2,0.2,0.1]; // Example 5.3 default
 
-/* ---------- UI for probs ---------- */
+/* ================== UI for probs ================== */
 const rows = document.getElementById('rows');
 const psum = document.getElementById('psum');
+
 function renderRows(){
   rows.innerHTML='';
   probs.forEach((p,j)=>{
@@ -132,13 +179,13 @@ function updateSum(){
   psum.className = 'sum ' + (Math.abs(s-1)<=1e-9?'ok':'bad');
 }
 
-/* ---------- math: ψ(t;u) ---------- */
+/* ================== Math: ψ(t;u) ================== */
 function tailSX(u){ // P(X>u)
   let s=0; for(let j=0;j<=u && j<probs.length;j++) s+=probs[j];
   return Math.max(0,1-s);
 }
 const memo = new Map();
-function key(t,u){ return t+'|'+u; }
+const key = (t,u)=> t+'|'+u;
 function psi(t,u){
   if(t<=0) return 0;
   if(t===1) return tailSX(u);
@@ -149,7 +196,7 @@ function psi(t,u){
   memo.set(k,sum); return sum;
 }
 
-/* ---------- draw ---------- */
+/* ================== Draw tree ================== */
 const svg = document.getElementById('svg');
 function S(tag,attrs={},text=''){ const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
   Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v)); if(text) el.textContent=text; return el; }
@@ -157,7 +204,7 @@ function drawTree(){
   svg.innerHTML='';
   memo.clear();
   const u0 = getU(), tH = getT();
-  const W=900,H=420, cx=W/2, cy=60;
+  const W=900,H=430, cx=W/2, cy=60;
 
   // root
   svg.appendChild(S('circle',{cx,cy,r:18,fill:'#60a5fa',class:'node'}));
@@ -171,7 +218,7 @@ function drawTree(){
   svg.appendChild(S('circle',{cx:rx,cy:ry,r:18,fill:'#ef4444',class:'node'}));
   svg.appendChild(S('text',{x:rx,y:ry+30,class:'lab','text-anchor':'middle'}, 'Doğrudan İFLAS'));
 
-  // children for j=0..min(u,M)
+  // children
   const M = probs.length-1, cap = Math.min(u0,M);
   if(cap>=0){
     const spread = Math.max(280, 90*cap);
@@ -180,16 +227,13 @@ function drawTree(){
       const x = cx - spread/2 + frac*spread;
       const y = cy + 110;
 
-      // edge root->child
       svg.appendChild(S('line',{x1:cx,y1:cy+18,x2:x,y2:y-18,class:'edge'}));
       svg.appendChild(S('text',{x:(cx+x)/2,y:(cy+y)/2-4,class:'edgelab','text-anchor':'middle'}, `j=${k}  (f=${probs[k].toFixed(3)})`));
 
-      // child node (updated surplus)
       svg.appendChild(S('circle',{cx:x,cy:y,r:16,fill:'#34d399',class:'node'}));
       const unew = u0 + 1 - k;
       svg.appendChild(S('text',{x:x,y:y-24,class:'lab','text-anchor':'middle'}, `u'=${unew}`));
 
-      // leaf showing ψ(t-1; u')
       const lx = x, ly = y + 100;
       svg.appendChild(S('line',{x1:x,y1:y+16,x2:lx,y2:ly-16,class:'edge'}));
       svg.appendChild(S('circle',{cx:lx,cy:ly,r:14,fill:'#a78bfa',class:'node'}));
@@ -198,49 +242,43 @@ function drawTree(){
     }
   }
 
-  // footer total
   const total = psi(tH,u0).toFixed(6);
-  const pill = S('text',{x:W-16,y:24,'text-anchor':'end',class:'lab'}, `Toplam ψ(${tH};${u0}) = ${total}`);
-  svg.appendChild(pill);
-
-  writeDigest(); // kısa özet
+  svg.appendChild(S('text',{x:W-16,y:24,'text-anchor':'end',class:'lab'}, `Toplam ψ(${tH};${u0}) = ${total}`));
+  writeDigest();
 }
 
-/* ---------- commentary (explain) ---------- */
+/* ================== Commentary (explain) ================== */
 function explain(){
   memo.clear();
   const u0 = getU(), tH = getT();
   const pruin = psi(1,u0);
   const M = probs.length-1, cap = Math.min(u0,M);
   let html = `<div>Seçilen parametreler: <b>u=${u0}</b>, <b>t=${tH}</b></div>`;
-  html += `<div class="mono" style="margin-top:6px">ψ(${tH};${u0}) = ψ(1;${u0}) + Σ<sub>j=0..min(u,M)</sub> f<sub>X</sub>(j)·ψ(${tH-1<=0?1:tH-1}; ${u0}+1−j)</div>`;
+  html += `<div class="mono" style="margin-top:6px">ψ(${tH};${u0}) = ψ(1;${u0}) + Σ f<sub>X</sub>(j)·ψ(${tH-1<=0?1:tH-1}; ${u0}+1−j)</div>`;
   html += `<ul class="small">`;
   html += `<li><b>Doğrudan iflas</b>: ψ(1;${u0}) = P(X>${u0}) = ${pruin.toFixed(6)}</li>`;
-  let subtotal = pruin;
+  let subtotal = pruin, strong = {j:-1,val:0,contrib:0,u1:null};
   for(let j=0;j<=cap;j++){
     const u1 = u0 + 1 - j;
     const pj = probs[j]||0;
     const ps = psi(Math.max(1,tH-1), u1);
     const contrib = pj*ps;
+    if(contrib>strong.contrib) strong={j,val:ps,contrib,u1};
     subtotal += contrib;
     html += `<li>j=${j}: u'=${u1}, f<sub>X</sub>(${j})=${pj.toFixed(6)}, ψ(${Math.max(1,tH-1)};${u1})=${ps.toFixed(6)} → <b>katkı</b>=${contrib.toFixed(6)}</li>`;
   }
   const total = psi(tH,u0);
-  html += `</ul>`;
-  html += `<div><b>Toplam</b> ψ(${tH};${u0}) = ${total.toFixed(6)} (ara toplam=${subtotal.toFixed(6)})</div>`;
-
-  // qualitative hints
-  const hints = [];
-  if (pruin > 0.2) hints.push(`Doğrudan iflas terimi yüksek (ψ(1;${u0})=${pruin.toFixed(3)}); küçük u veya ağır kuyruk etkisi.`);
-  if (tH>=3) hints.push(`Ufuk t=${tH} arttıkça ψ büyür; rekürsif dallardaki katkılar önem kazanır.`);
-  if (u0>=5) hints.push(`u=${u0} büyük → ψ(1;u) ve çoğu dalın ψ(${tH-1<=0?1:tH-1};u') küçük; toplam düşer.`);
-  if (hints.length){
-    html += `<div style="margin-top:8px"><b>Kısa yorum:</b> ${hints.join(' ')}</div>`;
-  }
+  html += `</ul><div><b>Toplam</b> ψ(${tH};${u0}) = ${total.toFixed(6)} (ara toplam=${subtotal.toFixed(6)})</div>`;
+  const hints=[];
+  if (pruin > 0.2) hints.push(`Doğrudan iflas terimi yüksek (ψ(1;${u0})=${pruin.toFixed(3)}).`);
+  if (getT()>=3) hints.push(`t arttıkça ψ büyür (rekürsiyon katkıları artar).`);
+  if (getU()>=5) hints.push(`u büyük → ψ(1;u) ve dal katkıları küçülür.`);
+  if (strong.j>=0) hints.push(`En baskın dal: j=${strong.j} (u'=${strong.u1}, katkı≈${strong.contrib.toFixed(3)}).`);
+  if (hints.length) html += `<div style="margin-top:8px"><b>Kısa yorum:</b> ${hints.join(' ')}</div>`;
   document.getElementById('explainBox').innerHTML = html;
 }
 
-/* ---------- small digest ---------- */
+/* ================== Small digest ================== */
 function writeDigest(){
   const u0=getU(), tH=getT();
   const res = psi(tH,u0);
@@ -248,28 +286,63 @@ function writeDigest(){
   const msg = `
   <div>ψ(${tH};${u0}) = <b>${res.toFixed(6)}</b></div>
   <div class="small">ψ(1;${u0}) = ${pr.toFixed(6)}. Sermaye güncellemesi her dalda <span class="mono">u ← u + 1 − j</span>.
-  u artarsa ψ azalır; t artarsa ψ artar.</div>`;
+  u ↑ ⇒ ψ ↓; t ↑ ⇒ ψ ↑.</div>`;
   document.getElementById('digest').innerHTML = msg;
 }
 
-/* ---------- helpers & events ---------- */
+/* ================== Gamification ================== */
+// 1) Target Mode: find min u with psi(t;u) <= alpha
+function findMinU(t, alpha, uCap=300){
+  memo.clear();
+  for(let u=0; u<=uCap; u++){
+    const v = psi(t,u);
+    if(v <= alpha) return {u, v};
+  }
+  return null;
+}
+
+// 2) Guess & Check
+function checkGuess(u, t, guess){
+  memo.clear();
+  const v = psi(t,u);
+  const err = Math.abs(v - guess);
+  return {v, err};
+}
+
+// 3) Scenario cards
+function applyScenario(tag){
+  if(tag==='light'){       // Hafif kuyruk (küçük büyük hasar olasılığı)
+    probs=[0.70,0.20,0.08,0.02];
+  }else if(tag==='mid'){   // Orta kuyruk
+    probs=[0.55,0.20,0.15,0.07,0.03];
+  }else if(tag==='heavy'){ // Ağır kuyruk
+    probs=[0.50,0.15,0.15,0.10,0.06,0.04];
+  }else if(tag==='cat'){   // Felaket kuyruk (uç olasılık ekli)
+    probs=[0.50,0.18,0.12,0.08,0.05,0.03,0.02,0.015,0.015];
+  }
+  // normalize to be safe
+  const s=probs.reduce((a,b)=>a+b,0); probs=probs.map(p=>p/s);
+  renderRows(); drawTree(); explain();
+}
+
+/* ================== Helpers & Events ================== */
 function gi(id){ return document.getElementById(id); }
 function getU(){ return Math.max(0, Math.floor(+gi('u0').value||0)); }
 function getT(){ return Math.max(1, Math.floor(+gi('tH').value||1)); }
 
 document.getElementById('add').onclick = ()=>{probs.push(0);renderRows();};
-document.getElementById('rem').onclick = ()=>{if(probs.length>1){probs.pop();renderRows();}};
+document.getElementById('rem').onclick = ()=>{if(probs.length>1){probs.pop();renderProbRows=false;renderRows();}};
 document.getElementById('norm').onclick = ()=>{const s=probs.reduce((a,b)=>a+b,0); if(s>0) probs=probs.map(p=>p/s); else probs=[1]; renderRows();};
 document.getElementById('ex').onclick = ()=>{probs=[0.5,0.2,0.2,0.1]; gi('u0').value=2; gi('tH').value=2; renderRows(); drawTree(); explain();};
 
-document.getElementById('draw').onclick = ()=>{drawTree();};
+document.getElementById('draw').onclick = drawTree;
 document.getElementById('calc').onclick = ()=>{
   memo.clear();
   const u0=getU(), tH=getT(), v=psi(tH,u0);
   gi('res').innerHTML = `Sonuç: <span class="pill">ψ(${tH};${u0}) = ${v.toFixed(6)}</span>`;
   writeDigest();
 };
-document.getElementById('explain').onclick = ()=>{explain();};
+document.getElementById('explain').onclick = explain;
 
 document.getElementById('resetAll').onclick = ()=>{
   // tam sıfırlama: defaulta dön + panelleri temizle
@@ -279,9 +352,37 @@ document.getElementById('resetAll').onclick = ()=>{
   gi('res').textContent='Hazır.';
   gi('explainBox').textContent='';
   gi('digest').textContent='';
+  gi('tg_out').textContent='';
+  gi('guess_out').textContent='';
   renderRows();
 };
 
+document.getElementById('btnTarget').onclick = ()=>{
+  const t = Math.max(1, Math.floor(+gi('tg_t').value||1));
+  const a = Math.max(0, Math.min(1, +gi('tg_a').value||0.01));
+  const ans = findMinU(t, a);
+  if(!ans){ gi('tg_out').innerHTML = `<span class="bad2">Uyarı:</span> u≤300 aralığında ψ(t;u) ≤ α bulunamadı.`; return; }
+  gi('tg_out').innerHTML = `Min <b>u=${ans.u}</b> ile ψ(${t};${ans.u})=${ans.v.toFixed(6)} ≤ ${a}.`;
+  gi('u0').value=ans.u; gi('tH').value=t;
+  drawTree(); explain();
+};
+
+document.getElementById('btnGuess').onclick = ()=>{
+  const u = Math.max(0, Math.floor(+gi('guess_u').value||0));
+  const t = Math.max(1, Math.floor(+gi('guess_t').value||1));
+  const g = Math.max(0, Math.min(1, +gi('guess_val').value||0));
+  const {v,err} = checkGuess(u,t,g);
+  const cls = err<0.02?'good':(err<0.05?'warn2':'bad2');
+  gi('guess_out').innerHTML = `Gerçek ψ(${t};${u}) = <b>${v.toFixed(6)}</b> • Hata = <b class="${cls}">${err.toFixed(6)}</b>`;
+  gi('u0').value=u; gi('tH').value=t;
+  drawTree(); explain();
+};
+
+document.querySelectorAll('[data-scn]').forEach(btn=>{
+  btn.onclick = ()=> applyScenario(btn.dataset.scn);
+});
+
+/* ================== Init ================== */
 renderRows();
 drawTree();
 explain();
