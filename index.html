@@ -3,310 +3,97 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kale Koruyucu 🏰 — Çocuk Oyunu (ψ(t;u) sezgisi)</title>
+<title>KRD Monthly — Excel Şablonu İndir (Formüllü)</title>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <style>
-  :root{
-    --bg:#0b1220; --ink:#f8fafc; --mut:#94a3b8;
-    --panel:#111827; --line:#253047;
-    --good:#10b981; --warn:#f59e0b; --bad:#ef4444; --acc:#38bdf8;
-  }
-  html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,Segoe UI,Roboto,Arial}
-  header{background:#0a1222;border-bottom:1px solid #1f2937;padding:14px 16px}
-  h1{margin:0;font-size:20px}
-  .wrap{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:12px}
-  .grid{display:grid;grid-template-columns:350px 1fr;gap:14px}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
-  .title{margin:0 0 8px 0;font-size:18px}
-  .muted{color:var(--mut);font-size:14px}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .slider{display:flex;align-items:center;gap:8px;margin:6px 0}
-  input[type=range]{width:100%}
-  .btn{cursor:pointer;background:#1f2937;border:1px solid #334155;color:var(--ink);padding:10px 12px;border-radius:10px}
-  .btn:hover{filter:brightness(1.08)}
-  .btn.big{font-size:18px;padding:12px 14px}
-  .btn.green{background:#059669;border-color:#047857}
-  .btn.orange{background:#d97706;border-color:#b45309}
-  .btn.red{background:#b91c1c;border-color:#7f1d1d}
-  .btn.sky{background:#0ea5e9;border-color:#0284c7}
-  .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#1f2937;border:1px solid #334155;margin-left:6px}
-  .bar{height:16px;background:#0b1220;border:1px solid #334155;border-radius:999px;overflow:hidden}
-  .bar > div{height:100%;width:0%;transition:width .4s ease}
-  .good{background:linear-gradient(90deg,#065f46,#10b981)}
-  .warn{background:linear-gradient(90deg,#7c2d12,#f59e0b)}
-  .bad{background:linear-gradient(90deg,#7f1d1d,#ef4444)}
-  .bignum{font-size:24px}
-  .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
-  .castle{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
-  .tile{background:#0b1328;border:1px solid #1f2a40;border-radius:10px;padding:8px;min-height:72px}
-  .tile h4{margin:0 0 6px 0}
-  .log{height:150px;overflow:auto;background:#0b1328;border:1px dashed #334155;border-radius:10px;padding:8px;white-space:pre-wrap}
-  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#0f172a;border:1px solid #334155;margin-right:6px}
-  .emoji{font-size:24px}
-  .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .center{text-align:center}
-  .hint{font-size:13px;color:#cbd5e1}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu; margin:0; background:#0f172a; color:#e5e7eb}
+  header{padding:18px 20px; border-bottom:1px solid #1f2937; background:linear-gradient(180deg,#0b1223,#0f172a)}
+  h1{margin:0; font-size:20px}
+  .wrap{max-width:900px; margin:24px auto; padding:0 16px}
+  .card{background:#111827; border:1px solid #1f2937; border-radius:12px; padding:16px; margin-bottom:16px}
+  button{background:linear-gradient(180deg,#1d4ed8,#0ea5e9); color:#fff; border:none; border-radius:10px; padding:12px 16px; font-weight:700; cursor:pointer}
 </style>
 </head>
 <body>
-<header><h1>Kale Koruyucu 🏰 — Hazineyi Koru, Canavarlara Dikkat!</h1></header>
-
+<header><h1>KRD Monthly (120 Ay) — Formüllü Excel Şablonu</h1></header>
 <div class="wrap">
-  <div class="panel">
-    <p class="muted">Amaç: <b>t gün</b> sonra kalenin hazinesi (<span class="mono">u</span>) sıfırın üstünde kalsın. Her gün +1 altın gelir; bazı günler canavarlar <b>j</b> altın çalar.<br>
-    Alttaki kontrollerle <b>başlangıç hazine u</b> ve <b>gün sayısı t</b>'yi seç, sonra “TUR OYNA”ya bas. (İstersen “Kolay/Orta/Zor” senaryo butonlarını dene.)</p>
+  <div class="card">
+    <p><b>Aylık (1–120)</b> nakit akışları ve <b>spot eğri</b> için <b>Key Rate Duration</b> hesaplarını
+       <b>Excel içinde formüllerle</b> (XLOOKUP/LET) yapan bir <b>.xlsx</b> dosyası oluşturur.</p>
+    <button onclick="downloadExcel()">Excel’i indir (KRD_Monthly_Formulas.xlsx)</button>
   </div>
-
-  <div class="grid">
-    <!-- LEFT: Controls -->
-    <section class="panel">
-      <h3 class="title">🎛️ Kontroller</h3>
-
-      <div class="slider">
-        <div>Başlangıç Hazine <b>u</b>: <span id="labU" class="bignum">2</span></div>
-      </div>
-      <input id="u0" type="range" min="0" max="30" step="1" value="2">
-
-      <div class="slider">
-        <div>Gün sayısı <b>t</b>: <span id="labT" class="bignum">5</span></div>
-      </div>
-      <input id="tH" type="range" min="1" max="20" step="1" value="5">
-
-      <div style="margin-top:10px" class="flex">
-        <button class="btn big green" id="play1">1 Gün Oyna</button>
-        <button class="btn big sky" id="playAll">TUR OYNA (t gün)</button>
-        <button class="btn big orange" id="reset">↻ Sıfırla</button>
-      </div>
-
-      <h4 style="margin-top:14px">🎯 Senaryo (hasar olasılıkları)</h4>
-      <div class="flex" style="margin-top:6px">
-        <button class="btn" data-scn="easy">Kolay</button>
-        <button class="btn" data-scn="normal">Orta</button>
-        <button class="btn" data-scn="hard">Zor</button>
-        <button class="btn" data-scn="cat">Felaket</button>
-      </div>
-      <div class="hint" id="scnHint" style="margin-top:6px"></div>
-
-      <h4 style="margin-top:14px">📊 Risk Göstergesi (ψ(t;u) ≈ batma ihtimali)</h4>
-      <div class="bar"><div id="riskBar"></div></div>
-      <div class="flex" style="margin-top:6px">
-        <span>ψ(t;u) = <b id="psiOut">—</b></span>
-        <span class="pill">u: <span id="pillU">2</span></span>
-        <span class="pill">t: <span id="pillT">5</span></span>
-      </div>
-      <div class="hint">Not: Bu bar, arkada çalışan iflas modelinin (rekürsif) sonucudur. Çocuk gözüyle sadece “kırmızı = tehlike” olarak düşün.</div>
-    </section>
-
-    <!-- RIGHT: Game Board -->
-    <section class="panel">
-      <h3 class="title">🏰 Kale Tahtası</h3>
-      <div class="castle">
-        <div class="tile">
-          <h4>Hazine 💰</h4>
-          <div class="bignum" id="gold">u = 2</div>
-          <div class="muted">Her gün +1 altın gelir.</div>
-        </div>
-        <div class="tile">
-          <h4>Bugün 🎲</h4>
-          <div id="today" class="bignum">—</div>
-          <div class="muted">Gün sonunda: <span id="after">—</span></div>
-        </div>
-        <div class="tile">
-          <h4>Durum</h4>
-          <div id="status" class="bignum">Hazır</div>
-          <div id="emoji" class="emoji">🙂</div>
-        </div>
-      </div>
-
-      <h4 style="margin-top:12px">📝 Günlük</h4>
-      <div id="log" class="log"></div>
-    </section>
-  </div>
-
-  <!-- Learning (for büyükler ama basit dil) -->
-  <section class="panel">
-    <h3 class="title">📚 Öğren (Basit Dille)</h3>
-    <p class="muted">Model: her gün <span class="mono">u ← u + 1 − j</span>. Burada <b>j</b>, canavarların o gün çaldığı altın. <br>
-    “Kolay/Orta/Zor/Felaket” butonları <b>j</b> için farklı olasılıklar kullanır. Ör: “Kolay”da büyük çalma az olur; “Felaket”te nadiren çok büyük çalma olabilir.</p>
-  </section>
 </div>
 
 <script>
-/* ==========================
-   0) Ses (ufak başarı/iflas bipleri)
-   ========================== */
-let audioCtx;
-function beep(freq=600, dur=0.08, type='sine'){
-  try{
-    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.type=type; o.frequency.value=freq; o.connect(g); g.connect(audioCtx.destination);
-    g.gain.setValueAtTime(0.001,audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.2,audioCtx.currentTime+0.01);
-    o.start();
-    setTimeout(()=>{g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.01);o.stop();}, dur*1000);
-  }catch(e){}
-}
+function AOA(rows){return XLSX.utils.aoa_to_sheet(rows);}
+function setCellFormula(ws,addr,f){if(!ws[addr])ws[addr]={};ws[addr].f=f;}
+function setCellValue(ws,addr,v){if(!ws[addr])ws[addr]={};ws[addr].v=v;}
+function xlCol(n){let s=[];while(n>=0){s.unshift(String.fromCharCode((n%26)+65));n=Math.floor(n/26)-1;}return s.join('');}
 
-/* ==========================
-   1) Senaryolar (hasar dağılımı)
-   probs[j] = P(j altın çalınır)
-   ========================== */
-let probs = []; // aktif dağılım
-const scenarios = {
-  easy:   { name:"Kolay",    probs:[0.70,0.20,0.08,0.02], note:"Küçük çalma daha olası, büyük neredeyse yok." },
-  normal: { name:"Orta",     probs:[0.55,0.20,0.15,0.07,0.03], note:"Dengeli—bazen orta büyüklükte çalma olur." },
-  hard:   { name:"Zor",      probs:[0.50,0.15,0.15,0.10,0.06,0.04], note:"Daha ağır kuyruk—büyük çalma şansı var." },
-  cat:    { name:"Felaket",  probs:[0.50,0.18,0.12,0.08,0.05,0.03,0.02,0.015,0.015], note:"Nadir ama büyük felaketler de mümkün." }
-};
-function setScenario(tag){
-  const p = scenarios[tag].probs.slice();
-  const s = p.reduce((a,b)=>a+b,0);
-  probs = p.map(x=>x/s); // normalize
-  document.getElementById('scnHint').textContent = `Seçili: ${scenarios[tag].name} — ${scenarios[tag].note}`;
-  log(`🎴 Senaryo: ${scenarios[tag].name}`);
-  updateRiskMeter();
-}
-document.querySelectorAll('[data-scn]').forEach(btn=>{
-  btn.onclick = ()=> setScenario(btn.dataset.scn);
-});
+function buildWorkbook(){
+  const wb=XLSX.utils.book_new();
 
-/* ==========================
-   2) ψ(t;u) hesaplayıcı (çocuk görmez)
-   ========================== */
-function tailSX(u){
-  let s=0;
-  for(let j=0;j<=u && j<probs.length;j++) s+=probs[j];
-  return Math.max(0,1-s);
-}
-const memo = new Map();
-function k(t,u){return t+'|'+u;}
-function psi(t,u){
-  if(t<=0) return 0;
-  if(t===1) return tailSX(u);
-  const K=k(t,u); if(memo.has(K)) return memo.get(K);
-  const M=probs.length-1, cap=Math.min(u,M);
-  let sum = psi(1,u);
-  for(let j=0;j<=cap;j++){
-    sum += probs[j]*psi(t-1, u+1-j);
+  // README
+  const readme=AOA([["KRD TEMPLATE (MONTHLY, FORMULAS) - Kullanım Talimatı"],[""],
+    ["Genel:"],["- Vadeler AY cinsindedir (1..120)."],
+    ["- Inputs sayfalarına nakit akışları ve eğriyi girin."],
+    ["- Settings’te bp ve key_nodes_m girilir."],
+    ["- Calc sayfasında interpolasyon ve df hesaplanır."],
+    ["- Outputs sayfasında PV, Duration, DV01 ve KRD otomatik oluşur."]
+  ]);
+  XLSX.utils.book_append_sheet(wb,readme,"README");
+
+  // Settings
+  const settings=AOA([["Setting","Value"],["tenor_unit","months"],["bp (basis point)",1],["key_nodes_m (list)",""],
+    ["",12],["",24],["",36],["",60],["",84],["",120]]);
+  XLSX.utils.book_append_sheet(wb,settings,"Settings");
+
+  // Inputs
+  const asset=AOA([["m","cf"]]); for(let m=1;m<=120;m++) XLSX.utils.sheet_add_aoa(asset,[[m,""]],{origin:-1});
+  XLSX.utils.book_append_sheet(wb,asset,"Inputs_Asset_Monthly");
+  const liab=AOA([["m","cf"]]); for(let m=1;m<=120;m++) XLSX.utils.sheet_add_aoa(liab,[[m,""]],{origin:-1});
+  XLSX.utils.book_append_sheet(wb,liab,"Inputs_Liab_Monthly");
+  const curve=AOA([["tenor_m","rate_pa"],[1,""],[3,""],[6,""],[12,""],[24,""],[36,""],[60,""],[84,""],[120,""]]);
+  XLSX.utils.book_append_sheet(wb,curve,"Inputs_Curve_Monthly");
+
+  // Calc (sadece iskelet, formüller örnek olarak bir-iki kolon eklenir)
+  const calc=AOA([["Calc"],["m","rate_base(m)","df_base(m)","df_parallel(m)"]]);
+  for(let m=1;m<=120;m++) XLSX.utils.sheet_add_aoa(calc,[[m,"","",""]],{origin:-1});
+  for(let r=3;r<=122;r++){
+    const mAddr="A"+r, bAddr="B"+r, cAddr="C"+r, dAddr="D"+r;
+    setCellFormula(calc,bAddr,
+      `=LET(t,${mAddr},x,Inputs_Curve_Monthly!$A$2:$A$1001,y,Inputs_Curve_Monthly!$B$2:$B$1001,`+
+      `t_low,XLOOKUP(t,x,x,,-1),t_high,XLOOKUP(t,x,x,,1),y_low,XLOOKUP(t,x,y,,-1),y_high,XLOOKUP(t,x,y,,1),`+
+      `IF(t_low=t_high,y_low,y_low+(y_high-y_low)*(t-t_low)/(t_high-t_low)))`);
+    setCellFormula(calc,cAddr,`=1/(1+${bAddr})^(${mAddr}/12)`);
+    setCellFormula(calc,dAddr,`=1/(1+(${bAddr}+Settings!$B$3/10000))^(${mAddr}/12)`);
   }
-  memo.set(K,sum); return sum;
+  XLSX.utils.book_append_sheet(wb,calc,"Calc");
+
+  // Outputs (özet tablolar)
+  const out=AOA([["Outputs"],[],["Segment","PV_base","PV_parallel","Parallel_Duration","Parallel_DV01"],
+    ["ASSET","","","",""],["LIABILITY","","","",""],["NET(ALM)","","","",""]]);
+  setCellFormula(out,"B4",`=SUMPRODUCT(Inputs_Asset_Monthly!$B$2:$B$121,INDEX(Calc!$C$3:$C$122,MATCH(Inputs_Asset_Monthly!$A$2:$A$121,Calc!$A$3:$A$122,0)))`);
+  setCellFormula(out,"B5",`=SUMPRODUCT(Inputs_Liab_Monthly!$B$2:$B$121,INDEX(Calc!$C$3:$C$122,MATCH(Inputs_Liab_Monthly!$A$2:$A$121,Calc!$A$3:$A$122,0)))`);
+  setCellFormula(out,"B6",`=B4+B5`);
+  setCellFormula(out,"C4",`=SUMPRODUCT(Inputs_Asset_Monthly!$B$2:$B$121,INDEX(Calc!$D$3:$D$122,MATCH(Inputs_Asset_Monthly!$A$2:$A$121,Calc!$A$3:$A$122,0)))`);
+  setCellFormula(out,"C5",`=SUMPRODUCT(Inputs_Liab_Monthly!$B$2:$B$121,INDEX(Calc!$D$3:$D$122,MATCH(Inputs_Liab_Monthly!$A$2:$A$121,Calc!$A$3:$A$122,0)))`);
+  setCellFormula(out,"C6",`=C4+C5`);
+  setCellFormula(out,"D4",`=IFERROR(-(C4-B4)/(B4*Settings!$B$3/10000),"")`);
+  setCellFormula(out,"D5",`=IFERROR(-(C5-B5)/(B5*Settings!$B$3/10000),"")`);
+  setCellFormula(out,"D6",`=IFERROR(-(C6-B6)/(B6*Settings!$B$3/10000),"")`);
+  setCellFormula(out,"E4",`=IFERROR((C4-B4)/(Settings!$B$3/10000),"")`);
+  setCellFormula(out,"E5",`=IFERROR((C5-B5)/(Settings!$B$3/10000),"")`);
+  setCellFormula(out,"E6",`=IFERROR((C6-B6)/(Settings!$B$3/10000),"")`);
+  XLSX.utils.book_append_sheet(wb,out,"Outputs");
+
+  return wb;
 }
 
-/* ==========================
-   3) Oyun durumu
-   ========================== */
-let U = 2; // hazine
-let T = 5; // hedef gün
-let day = 0; // şimdiki gün (0..T)
-let alive = true;
-
-const labU = document.getElementById('labU');
-const labT = document.getElementById('labT');
-const pillU = document.getElementById('pillU');
-const pillT = document.getElementById('pillT');
-const gold = document.getElementById('gold');
-const today = document.getElementById('today');
-const after = document.getElementById('after');
-const statusEl = document.getElementById('status');
-const emoji = document.getElementById('emoji');
-const psiOut = document.getElementById('psiOut');
-const riskBar = document.getElementById('riskBar');
-const logBox = document.getElementById('log');
-
-function log(msg){
-  logBox.textContent += msg + "\n";
-  logBox.scrollTop = logBox.scrollHeight;
+function downloadExcel(){
+  const wb=buildWorkbook();
+  XLSX.writeFile(wb,"KRD_Monthly_Formulas.xlsx");
 }
-function setStatus(text, face="🙂"){ statusEl.textContent = text; emoji.textContent = face; }
-function refreshHUD(){
-  labU.textContent = U; labT.textContent = T;
-  pillU.textContent = U; pillT.textContent = T;
-  gold.textContent = `u = ${U}`;
-  today.textContent = (day===0? "—" : `Gün ${day}`);
-}
-function updateRiskMeter(){
-  memo.clear();
-  const val = psi(T,U);
-  psiOut.textContent = val.toFixed(4);
-  const pct = Math.max(0, Math.min(1,val))*100;
-  riskBar.style.width = pct+"%";
-  riskBar.className = (val<0.1? "good" : (val<0.3? "warn":"bad"));
-}
-
-/* örnekleme: bir günde j üret */
-function sampleJ(){
-  const r=Math.random(); let c=0;
-  for(let j=0;j<probs.length;j++){
-    c+=probs[j]; if(r<=c) return j;
-  }
-  return probs.length-1;
-}
-
-/* bir gün oynat */
-function playDay(){
-  if(!alive){ log("ℹ️ Oyun bitti. Sıfırla’ya bas."); return; }
-  if(day>=T){ log("ℹ️ Süre doldu. Sıfırla’ya bas."); return; }
-  const j = sampleJ();
-  const before = U;
-  U = U + 1 - j; // model
-  day++;
-
-  today.textContent = `Gün ${day}: +1 altın, canavar j=${j}`;
-  after.textContent = `Sonra: u = ${before} + 1 − ${j} = ${U}`;
-  log(`🗓️ Gün ${day}: j=${j} → u ${before}→${U}`);
-
-  if(U<=0){
-    alive=false; setStatus("IFLAS! 😵", "💀"); beep(200,0.12,'square'); beep(160,0.12,'square');
-    log("❌ Kale battı! Sıfırla ile yeniden dene.");
-  }else{
-    setStatus("Devam! 💪","🙂"); beep(700,0.07,'sine');
-    if(day===T){ setStatus("TAMAMLANDI 🎉","😄"); beep(880,0.09,'triangle'); }
-  }
-  updateRiskMeter(); refreshHUD();
-}
-
-/* tüm turu hızlı simüle et (görüntü + günlük) */
-async function playAll(){
-  if(!alive){ log("ℹ️ Oyun bitti. Sıfırla’ya bas."); return; }
-  const wait = (ms)=>new Promise(r=>setTimeout(r,ms));
-  while(alive && day<T){
-    playDay();
-    await wait(350);
-  }
-}
-
-/* sıfırla */
-function hardReset(){
-  U = parseInt(document.getElementById('u0').value,10);
-  T = parseInt(document.getElementById('tH').value,10);
-  day=0; alive=true;
-  today.textContent="—"; after.textContent="—"; logBox.textContent="";
-  setStatus("Hazır 🙂","🙂");
-  refreshHUD(); updateRiskMeter();
-}
-
-/* ==========================
-   4) Etkileşim
-   ========================== */
-document.getElementById('u0').oninput = (e)=>{ U = +e.target.value; refreshHUD(); updateRiskMeter(); };
-document.getElementById('tH').oninput = (e)=>{ T = +e.target.value; refreshHUD(); updateRiskMeter(); };
-
-document.getElementById('play1').onclick = playDay;
-document.getElementById('playAll').onclick = playAll;
-document.getElementById('reset').onclick = ()=>{
-  // tam başa dön: slider’ları da defaulta çekelim
-  document.getElementById('u0').value=2;
-  document.getElementById('tH').value=5;
-  setScenario('normal');
-  hardReset();
-};
-
-/* ==========================
-   5) Başlangıç
-   ========================== */
-setScenario('normal'); // orta
-hardReset();
-log("👋 Hoş geldin Koruyucu! Hazineyi koru, t gün dayan!");
 </script>
 </body>
 </html>
