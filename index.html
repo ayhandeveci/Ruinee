@@ -5,34 +5,41 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>İflas Ağacı (Discrete-Time) — ψ(t;u)</title>
 <style>
-  :root{--bg:#0f172a;--panel:#111827;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--ok:#10b981;--bad:#ef4444}
+  :root{--bg:#0f172a;--panel:#111827;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--ok:#10b981;--bad:#ef4444;--accent:#2563eb}
   body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,Segoe UI,Roboto,Arial}
   header{padding:14px 16px;border-bottom:1px solid #1f2937;background:#0b1220}
   h1{margin:0;font-size:18px}
   .wrap{display:grid;grid-template-columns:360px 1fr;min-height:100vh}
   .left{padding:14px;border-right:1px solid #1f2937;background:var(--panel)}
-  .right{padding:16px}
+  .right{padding:16px;display:grid;grid-template-rows:auto 180px 1fr;gap:12px}
   fieldset{border:1px solid #1f2937;border-radius:10px;padding:10px 12px;margin:0 0 12px}
   legend{color:var(--muted);padding:0 6px}
   label{display:block;margin:6px 0 4px}
   input[type=number]{width:100%;padding:8px;border-radius:8px;border:1px solid #253047;background:#0b1220;color:var(--ink)}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .btn{background:#1f2937;color:#e5e7eb;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer}
-  .btn:hover{filter:brightness(1.1)}
-  .btn.primary{background:#2563eb;border-color:#1d4ed8}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.primary{background:var(--accent);border-color:#1d4ed8}
+  .btn.success{background:#059669;border-color:#047857}
+  .btn.warn{background:#d97706;border-color:#b45309}
+  .btn.ghost{background:transparent;border-color:#334155}
   .prob-grid{display:grid;grid-template-columns:60px 1fr 70px;gap:6px;align-items:center;margin-top:6px}
   .muted{color:var(--muted);font-size:13px}
   .sum{margin-top:6px;font:13px/1 monospace}
   .sum.ok{color:var(--ok)} .sum.bad{color:var(--bad)}
-  .legend{display:flex;gap:10px;align-items:center;margin:8px 0}
+  .legend{display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap}
   .dot{width:10px;height:10px;border-radius:50%}
   .dot.root{background:#60a5fa}.dot.child{background:#34d399}.dot.leaf{background:#a78bfa}.dot.ruin{background:#ef4444}
-  svg{width:100%;height:560px;background:#0b1220;border:1px solid #253047;border-radius:10px}
+  svg{width:100%;height:420px;background:#0b1220;border:1px solid #253047;border-radius:10px}
   .node{paint-order:stroke;stroke:#0008;stroke-width:1.5px}
   .lab{font:12px sans-serif;fill:#d1d5db}
   .edge{stroke:#475569;stroke-width:1.5px}
   .edgelab{font:11px sans-serif;fill:#9ca3af}
   .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#064e3b}
+  .panel{background:#0b1220;border:1px solid #253047;border-radius:10px;padding:10px}
+  .panel h3{margin:0 0 8px 0;font-size:14px;color:#cbd5e1}
+  .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+  .small{font-size:13px}
 </style>
 </head>
 <body>
@@ -52,11 +59,12 @@
       <legend>Hasar dağılımı f<sub>X</sub>(j)</legend>
       <div id="rows"></div>
       <div class="sum" id="psum"></div>
-      <div style="display:flex;gap:6px;margin-top:8px">
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
         <button class="btn" id="add">+ Sonuç</button>
         <button class="btn" id="rem">− Sonuç</button>
-        <button class="btn" id="norm">Normalize</button>
+        <button class="btn warn" id="norm">Normalize</button>
         <button class="btn" id="ex">Example 5.3</button>
+        <button class="btn ghost" id="resetAll">Sıfırla (Başa Dön)</button>
       </div>
     </fieldset>
 
@@ -65,19 +73,30 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn primary" id="draw">Ağacı Çiz</button>
         <button class="btn" id="calc">ψ(t;u) Hesapla</button>
+        <button class="btn success" id="explain">Yorum Üret</button>
       </div>
       <div id="res" style="margin-top:8px" class="muted">Hazır.</div>
       <div class="legend">
         <div class="dot root"></div><span class="muted">Kök (u,t)</span>
         <div class="dot child"></div><span class="muted">Güncellenmiş u</span>
-        <div class="dot leaf"></div><span class="muted">ψ(t−1;u+1−j)</span>
+        <div class="dot leaf"></div><span class="muted">ψ(t−1;u')</span>
         <div class="dot ruin"></div><span class="muted">Doğrudan iflas ψ(1;u)</span>
       </div>
     </fieldset>
   </section>
 
   <section class="right">
-    <svg id="svg" viewBox="0 0 900 560" preserveAspectRatio="xMidYMid meet"></svg>
+    <svg id="svg" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet"></svg>
+
+    <div class="panel">
+      <h3>Yorum (Hesap Açıklaması)</h3>
+      <div id="explainBox" class="small"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Küçük Özet</h3>
+      <div id="digest" class="small"></div>
+    </div>
   </section>
 </div>
 
@@ -88,7 +107,6 @@ let probs = [0.5,0.2,0.2,0.1]; // Example 5.3 default
 /* ---------- UI for probs ---------- */
 const rows = document.getElementById('rows');
 const psum = document.getElementById('psum');
-
 function renderRows(){
   rows.innerHTML='';
   probs.forEach((p,j)=>{
@@ -113,10 +131,6 @@ function updateSum(){
   psum.textContent = `Toplam = ${s.toFixed(3)}`;
   psum.className = 'sum ' + (Math.abs(s-1)<=1e-9?'ok':'bad');
 }
-document.getElementById('add').onclick=()=>{probs.push(0);renderRows();};
-document.getElementById('rem').onclick=()=>{if(probs.length>1){probs.pop();renderRows();}};
-document.getElementById('norm').onclick=()=>{const s=probs.reduce((a,b)=>a+b,0); if(s>0) probs=probs.map(p=>p/s); else probs=[1]; renderRows();};
-document.getElementById('ex').onclick=()=>{probs=[0.5,0.2,0.2,0.1]; document.getElementById('u0').value=2; document.getElementById('tH').value=2; renderRows();};
 
 /* ---------- math: ψ(t;u) ---------- */
 function tailSX(u){ // P(X>u)
@@ -142,9 +156,8 @@ function S(tag,attrs={},text=''){ const el=document.createElementNS('http://www.
 function drawTree(){
   svg.innerHTML='';
   memo.clear();
-  const u0 = Math.max(0, Math.floor(+document.getElementById('u0').value||0));
-  const tH = Math.max(1, Math.floor(+document.getElementById('tH').value||1));
-  const W=900,H=560, cx=W/2, cy=90;
+  const u0 = getU(), tH = getT();
+  const W=900,H=420, cx=W/2, cy=60;
 
   // root
   svg.appendChild(S('circle',{cx,cy,r:18,fill:'#60a5fa',class:'node'}));
@@ -152,11 +165,11 @@ function drawTree(){
 
   // direct ruin leaf
   const pruin = psi(1,u0);
-  const rx = cx, ry = H-70;
+  const rx = cx, ry = H-40;
   svg.appendChild(S('line',{x1:cx,y1:cy+18,x2:rx,y2:ry-18,class:'edge'}));
   svg.appendChild(S('text',{x:(cx+rx)/2+6,y:(cy+ry)/2,class:'edgelab'}, `P(X>u)=ψ(1;${u0})=${pruin.toFixed(3)}`));
   svg.appendChild(S('circle',{cx:rx,cy:ry,r:18,fill:'#ef4444',class:'node'}));
-  svg.appendChild(S('text',{x:rx,y:ry+32,class:'lab','text-anchor':'middle'}, 'Doğrudan İFLAS'));
+  svg.appendChild(S('text',{x:rx,y:ry+30,class:'lab','text-anchor':'middle'}, 'Doğrudan İFLAS'));
 
   // children for j=0..min(u,M)
   const M = probs.length-1, cap = Math.min(u0,M);
@@ -165,7 +178,7 @@ function drawTree(){
     for(let k=0;k<=cap;k++){
       const frac = cap>0? (k/cap) : 0.5;
       const x = cx - spread/2 + frac*spread;
-      const y = cy + 130;
+      const y = cy + 110;
 
       // edge root->child
       svg.appendChild(S('line',{x1:cx,y1:cy+18,x2:x,y2:y-18,class:'edge'}));
@@ -177,7 +190,7 @@ function drawTree(){
       svg.appendChild(S('text',{x:x,y:y-24,class:'lab','text-anchor':'middle'}, `u'=${unew}`));
 
       // leaf showing ψ(t-1; u')
-      const lx = x, ly = y + 120;
+      const lx = x, ly = y + 100;
       svg.appendChild(S('line',{x1:x,y1:y+16,x2:lx,y2:ly-16,class:'edge'}));
       svg.appendChild(S('circle',{cx:lx,cy:ly,r:14,fill:'#a78bfa',class:'node'}));
       const val = psi(Math.max(1,tH-1), unew);
@@ -187,23 +200,92 @@ function drawTree(){
 
   // footer total
   const total = psi(tH,u0).toFixed(6);
-  const pill = S('text',{x:W-16,y:24,'text-anchor':'end',class:'lab'},
-    `Toplam ψ(${tH};${u0}) = ${total}`);
+  const pill = S('text',{x:W-16,y:24,'text-anchor':'end',class:'lab'}, `Toplam ψ(${tH};${u0}) = ${total}`);
   svg.appendChild(pill);
+
+  writeDigest(); // kısa özet
 }
 
-document.getElementById('draw').onclick = drawTree;
+/* ---------- commentary (explain) ---------- */
+function explain(){
+  memo.clear();
+  const u0 = getU(), tH = getT();
+  const pruin = psi(1,u0);
+  const M = probs.length-1, cap = Math.min(u0,M);
+  let html = `<div>Seçilen parametreler: <b>u=${u0}</b>, <b>t=${tH}</b></div>`;
+  html += `<div class="mono" style="margin-top:6px">ψ(${tH};${u0}) = ψ(1;${u0}) + Σ<sub>j=0..min(u,M)</sub> f<sub>X</sub>(j)·ψ(${tH-1<=0?1:tH-1}; ${u0}+1−j)</div>`;
+  html += `<ul class="small">`;
+  html += `<li><b>Doğrudan iflas</b>: ψ(1;${u0}) = P(X>${u0}) = ${pruin.toFixed(6)}</li>`;
+  let subtotal = pruin;
+  for(let j=0;j<=cap;j++){
+    const u1 = u0 + 1 - j;
+    const pj = probs[j]||0;
+    const ps = psi(Math.max(1,tH-1), u1);
+    const contrib = pj*ps;
+    subtotal += contrib;
+    html += `<li>j=${j}: u'=${u1}, f<sub>X</sub>(${j})=${pj.toFixed(6)}, ψ(${Math.max(1,tH-1)};${u1})=${ps.toFixed(6)} → <b>katkı</b>=${contrib.toFixed(6)}</li>`;
+  }
+  const total = psi(tH,u0);
+  html += `</ul>`;
+  html += `<div><b>Toplam</b> ψ(${tH};${u0}) = ${total.toFixed(6)} (ara toplam=${subtotal.toFixed(6)})</div>`;
+
+  // qualitative hints
+  const hints = [];
+  if (pruin > 0.2) hints.push(`Doğrudan iflas terimi yüksek (ψ(1;${u0})=${pruin.toFixed(3)}); küçük u veya ağır kuyruk etkisi.`);
+  if (tH>=3) hints.push(`Ufuk t=${tH} arttıkça ψ büyür; rekürsif dallardaki katkılar önem kazanır.`);
+  if (u0>=5) hints.push(`u=${u0} büyük → ψ(1;u) ve çoğu dalın ψ(${tH-1<=0?1:tH-1};u') küçük; toplam düşer.`);
+  if (hints.length){
+    html += `<div style="margin-top:8px"><b>Kısa yorum:</b> ${hints.join(' ')}</div>`;
+  }
+  document.getElementById('explainBox').innerHTML = html;
+}
+
+/* ---------- small digest ---------- */
+function writeDigest(){
+  const u0=getU(), tH=getT();
+  const res = psi(tH,u0);
+  const pr = psi(1,u0);
+  const msg = `
+  <div>ψ(${tH};${u0}) = <b>${res.toFixed(6)}</b></div>
+  <div class="small">ψ(1;${u0}) = ${pr.toFixed(6)}. Sermaye güncellemesi her dalda <span class="mono">u ← u + 1 − j</span>.
+  u artarsa ψ azalır; t artarsa ψ artar.</div>`;
+  document.getElementById('digest').innerHTML = msg;
+}
+
+/* ---------- helpers & events ---------- */
+function gi(id){ return document.getElementById(id); }
+function getU(){ return Math.max(0, Math.floor(+gi('u0').value||0)); }
+function getT(){ return Math.max(1, Math.floor(+gi('tH').value||1)); }
+
+document.getElementById('add').onclick = ()=>{probs.push(0);renderRows();};
+document.getElementById('rem').onclick = ()=>{if(probs.length>1){probs.pop();renderRows();}};
+document.getElementById('norm').onclick = ()=>{const s=probs.reduce((a,b)=>a+b,0); if(s>0) probs=probs.map(p=>p/s); else probs=[1]; renderRows();};
+document.getElementById('ex').onclick = ()=>{probs=[0.5,0.2,0.2,0.1]; gi('u0').value=2; gi('tH').value=2; renderRows(); drawTree(); explain();};
+
+document.getElementById('draw').onclick = ()=>{drawTree();};
 document.getElementById('calc').onclick = ()=>{
   memo.clear();
-  const u0 = Math.max(0, Math.floor(+document.getElementById('u0').value||0));
-  const tH = Math.max(1, Math.floor(+document.getElementById('tH').value||1));
-  const v = psi(tH,u0);
-  document.getElementById('res').innerHTML =
-    `Sonuç: <span class="pill">ψ(${tH};${u0}) = ${v.toFixed(6)}</span>`;
+  const u0=getU(), tH=getT(), v=psi(tH,u0);
+  gi('res').innerHTML = `Sonuç: <span class="pill">ψ(${tH};${u0}) = ${v.toFixed(6)}</span>`;
+  writeDigest();
+};
+document.getElementById('explain').onclick = ()=>{explain();};
+
+document.getElementById('resetAll').onclick = ()=>{
+  // tam sıfırlama: defaulta dön + panelleri temizle
+  probs=[0.5,0.2,0.2,0.1];
+  gi('u0').value=2; gi('tH').value=2;
+  memo.clear(); svg.innerHTML='';
+  gi('res').textContent='Hazır.';
+  gi('explainBox').textContent='';
+  gi('digest').textContent='';
+  renderRows();
 };
 
 renderRows();
 drawTree();
+explain();
+writeDigest();
 </script>
 </body>
 </html>
