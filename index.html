@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KRD (Monthly, 120m) — ALM Key Rate Duration Aracı</title>
+<style>
+  :root {
+    --bg:#0f172a;
+    --panel:#111827;
+    --muted:#334155;
+    --text:#e5e7eb;
+    --accent:#60a5fa;
+    --good:#22c55e;
+    --bad:#ef4444;
+    --warn:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header{
+    padding:18px 20px;
+    border-bottom:1px solid #1f2937;
+    background:linear-gradient(180deg,#0b1223,#0f172a);
+    position:sticky;top:0;z-index:10;
+  }
+  h1{margin:0;font-size:20px;letter-spacing:.3px}
+  .container{padding:22px;max-width:1200px;margin:auto}
+  .grid{display:grid;gap:16px}
+  .cols-2{grid-template-columns:1fr 1fr}
+  .cols-3{grid-template-columns:repeat(3,1fr)}
+  .card{
+    background:var(--panel);
+    border:1px solid #1f2937;
+    border-radius:12px;
+    padding:16px;
+  }
+  .card h2{font-size:16px;margin:0 0 10px 0;color:#cbd5e1}
+  label{font-size:12px;color:#cbd5e1;margin-bottom:6px;display:block}
+  input, textarea, select, button {
+    background:#0b1020;
+    color:var(--text);
+    border:1px solid #263042;
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:14px;
+    width:100%;
+  }
+  input[type=number]{text-align:right}
+  textarea{min-height:90px;resize:vertical}
+  button{
+    background:linear-gradient(180deg,#1d4ed8,#0ea5e9);
+    border:none;
+    cursor:pointer;
+    font-weight:600;
+  }
+  button.secondary{background:#0b1020;border:1px solid #334155}
+  .row{display:flex;gap:10px;align-items:center}
+  .row>*{flex:1}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+  th,td{border-bottom:1px solid #1f2937;padding:8px 6px;text-align:right}
+  th{color:#cbd5e1;text-align:center;background:#0c1326;position:sticky;top:0}
+  td:first-child, th:first-child{text-align:left}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #243046;background:#0b1020}
+  .ok{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+  .footnote{font-size:12px;color:#94a3b8}
+  .sticky-actions{position:sticky;bottom:0;padding-top:12px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.4));}
+</style>
+</head>
+<body>
+<header>
+  <h1>ALM Key Rate Duration — Aylık (120 Ay) KRD Hesaplayıcı</h1>
+</header>
+
+<div class="container grid">
+  <div class="grid cols-3">
+    <div class="card">
+      <h2>Ayarlar</h2>
+      <label for="bp">Şok büyüklüğü (bp)</label>
+      <input id="bp" type="number" step="1" value="1">
+      <label for="keynodes">Key Nodes (ay) — virgülle ayır (örn: 12,24,36,60,84,120)</label>
+      <input id="keynodes" type="text" value="12,24,36,60,84,120">
+      <div class="footnote">İskonto: PV = Σ cf / (1 + r<sub>yıllık</sub>)<sup>m/12</sup></div>
+    </div>
+
+    <div class="card">
+      <h2>Eğri (Spot, yıllık — ondalık)</h2>
+      <div class="row">
+        <button class="secondary" onclick="addCurveRow()">Satır ekle</button>
+        <button class="secondary" onclick="clearCurve()">Temizle</button>
+        <button onclick="loadSampleCurve()">Örnek yükle</button>
+      </div>
+      <table id="curveTable">
+        <thead><tr><th>tenor_m</th><th>rate_pa</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Girdi: Nakit Akışları (Aylık)</h2>
+      <div class="grid cols-2">
+        <div>
+          <label>ASSET — 1..120 ay için cf</label>
+          <div class="row">
+            <button class="secondary" onclick="fillAssetZeros()">Hepsini 0 yap</button>
+            <button onclick="pasteToAsset()">Panodan yapıştır</button>
+          </div>
+          <table id="assetTable">
+            <thead><tr><th>m</th><th>cf</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div>
+          <label>LIABILITY — 1..120 ay için cf</label>
+          <div class="row">
+            <button class="secondary" onclick="fillLiabZeros()">Hepsini 0 yap</button>
+            <button onclick="pasteToLiab()">Panodan yapıştır</button>
+          </div>
+          <table id="liabTable">
+            <thead><tr><th>m</th><th>cf</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card sticky-actions">
+    <div class="row">
+      <button onclick="computeAll()">HESAPLA</button>
+      <button class="secondary" onclick="exportOutputs()">Çıktıları CSV indir</button>
+      <button class="secondary" onclick="saveInputs()">Girdileri JSON indir</button>
+      <button class="secondary" onclick="loadInputs()">Girdi JSON yükle</button>
+    </div>
+    <div class="footnote" style="margin-top:8px">
+      İpucu: Rakam girerken virgül veya nokta fark etmez; sistem otomatik çevirir.
+    </div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <h2>Özet (PV & Parallel)</h2>
+      <table id="summaryTable">
+        <thead>
+          <tr>
+            <th>Segment</th><th>PV_base</th><th>PV_parallel</th><th>Parallel Duration</th><th>Parallel DV01</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>KRD — Node Bazında</h2>
+      <table id="krdTable">
+        <thead>
+          <tr>
+            <th>Segment</th><th>node_m</th><th>PV_bump</th><th>KRD</th><th>DV01_node</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="checkRow" class="footnote" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Kısa Yardım</h2>
+    <ol>
+      <li><b>Eğriyi</b> gir: <span class="pill">tenor_m</span> ve <span class="pill">rate_pa</span> (yıllık ondalık, örn 0.032).</li>
+      <li><b>Nakit akışlarını</b> 1..120 ay için doldur (asset / liability). Boş = 0.</li>
+      <li><b>Key nodes</b> alanına ay cinsinden düğümleri yaz (örn 12,24,36,60,84,120).</li>
+      <li><b>HESAPLA</b> butonuna bas.</li>
+      <li>“Çıktıları CSV indir” ile iki dosya iner: <i>summary.csv</i> ve <i>krd.csv</i>.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+// ---------- Helpers ----------
+const parseNum = (s) => {
+  if (s === null || s === undefined) return NaN;
+  if (typeof s === 'number') return s;
+  s = (''+s).trim();
+  if (!s) return NaN;
+  s = s.replace(',', '.'); // TR ondalık desteği
+  return parseFloat(s);
+};
+const fmt = (x, d=6) => {
+  if (!isFinite(x)) return '';
+  return Number(x).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:6});
+};
+
+// ---------- UI Builders ----------
+function addCurveRow(tenor=null, rate=null){
+  const tbody = document.querySelector('#curveTable tbody');
+  const tr = document.createElement('tr');
+  const td1 = document.createElement('td');
+  const td2 = document.createElement('td');
+  const i1 = document.createElement('input'); i1.type='number'; i1.step='1'; i1.value = tenor??'';
+  const i2 = document.createElement('input'); i2.type='text'; i2.value = rate??'';
+  td1.appendChild(i1); td2.appendChild(i2);
+  tr.appendChild(td1); tr.appendChild(td2);
+  tbody.appendChild(tr);
+}
+function clearCurve(){ document.querySelector('#curveTable tbody').innerHTML = ''; }
+function loadSampleCurve(){
+  clearCurve();
+  [[1,0.020],[3,0.022],[6,0.024],[12,0.026],[24,0.028],[36,0.030],[60,0.032],[84,0.033],[120,0.034]]
+    .forEach(([t,r])=>addCurveRow(t,r));
+}
+function buildMonthlyTables(){
+  const assetT = document.querySelector('#assetTable tbody');
+  const liabT  = document.querySelector('#liabTable tbody');
+  assetT.innerHTML=''; liabT.innerHTML='';
+  for(let m=1;m<=120;m++){
+    const trA = document.createElement('tr');
+    trA.innerHTML = `<td>${m}</td><td><input type="text" inputmode="decimal"></td>`;
+    assetT.appendChild(trA);
+    const trL = document.createElement('tr');
+    trL.innerHTML = `<td>${m}</td><td><input type="text" inputmode="decimal"></td>`;
+    liabT.appendChild(trL);
+  }
+}
+function fillAssetZeros(){ document.querySelectorAll('#assetTable tbody input').forEach(i=>i.value='0'); }
+function fillLiabZeros(){ document.querySelectorAll('#liabTable tbody input').forEach(i=>i.value='0'); }
+async function pasteToAsset(){
+  try{
+    const txt = await navigator.clipboard.readText();
+    const vals = txt.split(/[\s,;]+/).map(parseNum).filter(v=>!isNaN(v));
+    const inputs = Array.from(document.querySelectorAll('#assetTable tbody input'));
+    for(let i=0;i<inputs.length && i<vals.length;i++) inputs[i].value = vals[i];
+  }catch(e){ alert('Panoya erişilemedi. Tarayıcı izinleri?'); }
+}
+async function pasteToLiab(){
+  try{
+    const txt = await navigator.clipboard.readText();
+    const vals = txt.split(/[\s,;]+/).map(parseNum).filter(v=>!isNaN(v));
+    const inputs = Array.from(document.querySelectorAll('#liabTable tbody input'));
+    for(let i=0;i<inputs.length && i<vals.length;i++) inputs[i].value = vals[i];
+  }catch(e){ alert('Panoya erişilemedi. Tarayıcı izinleri?'); }
+}
+
+// ---------- Data Access ----------
+function readCurve(){
+  const rows = Array.from(document.querySelectorAll('#curveTable tbody tr'));
+  const arr = [];
+  for(const r of rows){
+    const t = parseNum(r.children[0].querySelector('input').value);
+    const y = parseNum(r.children[1].querySelector('input').value);
+    if (isFinite(t) && isFinite(y)) arr.push({t:Math.round(t), y});
+  }
+  arr.sort((a,b)=>a.t-b.t);
+  return arr;
+}
+function readAsset(){
+  return Array.from(document.querySelectorAll('#assetTable tbody input')).map(i => {
+    const v = parseNum(i.value);
+    return isFinite(v) ? v : 0;
+  });
+}
+function readLiab(){
+  return Array.from(document.querySelectorAll('#liabTable tbody input')).map(i => {
+    const v = parseNum(i.value);
+    return isFinite(v) ? v : 0;
+  });
+}
+function readSettings(){
+  const bp = parseNum(document.querySelector('#bp').value)||1;
+  const nodes = (document.querySelector('#keynodes').value||'')
+                 .split(/[,\s;]+/).map(parseNum).filter(v=>isFinite(v) && v>0);
+  return {bp, nodes: Array.from(new Set(nodes)).sort((a,b)=>a-b)};
+}
+
+// ---------- Math: Interp, PV, KRD ----------
+function interpRate(t, curve){
+  if (curve.length===0) return NaN;
+  if (t<=curve[0].t) return curve[0].y;
+  if (t>=curve[curve.length-1].t) return curve[curve.length-1].y;
+  let lo=0, hi=curve.length-1;
+  while(hi-lo>1){
+    const mid=(lo+hi)>>1;
+    if (curve[mid].t===t) return curve[mid].y;
+    if (curve[mid].t<t) lo=mid; else hi=mid;
+  }
+  const t0=curve[lo].t, y0=curve[lo].y;
+  const t1=curve[hi].t, y1=curve[hi].y;
+  const w=(t - t0)/(t1 - t0);
+  return y0*(1-w) + y1*w;
+}
+function df(r_pa, m){ return 1/Math.pow(1 + r_pa, m/12); }
+function pvOf(cfs, curve){
+  let s=0;
+  for(let m=1;m<=120;m++){
+    const cf = cfs[m-1]||0;
+    if (cf===0) continue;
+    const r = interpRate(m, curve);
+    s += cf*df(r, m);
+  }
+  return s;
+}
+function bumpCurveAtNode(curve, node_m, shock){
+  const out = curve.map(o => ({t:o.t, y:o.y}));
+  const idx = out.findIndex(o => o.t===node_m);
+  if (idx>=0){
+    out[idx].y += shock;
+    return out;
+  } else {
+    const base = interpRate(node_m, out);
+    out.push({t:node_m, y:base + shock});
+    out.sort((a,b)=>a.t-b.t);
+    return out;
+  }
+}
+function computeAll(){
+  const curve = readCurve();
+  if (curve.length<2){ alert('Lütfen en az iki eğri noktası girin.'); return; }
+  const asset = readAsset();
+  const liab  = readLiab();
+  const {bp, nodes} = readSettings();
+  const shock = bp/10000;
+
+  const pvA = pvOf(asset, curve);
+  const pvL = pvOf(liab,  curve);
+  const pvN = pvA + pvL;
+
+  const curvePar = curve.map(o=>({t:o.t, y:o.y+shock}));
+  const pvA_par = pvOf(asset, curvePar);
+  const pvL_par = pvOf(liab,  curvePar);
+  const pvN_par = pvA_par + pvL_par;
+
+  const durA = isFinite(pvA)&& pvA!==0 ? -(pvA_par - pvA)/(pvA*shock) : NaN;
+  const durL = isFinite(pvL)&& pvL!==0 ? -(pvL_par - pvL)/(pvL*shock) : NaN;
+  const durN = isFinite(pvN)&& pvN!==0 ? -(pvN_par - pvN)/(pvN*shock) : NaN;
+
+  const dv01A = (pvA_par - pvA)/shock;
+  const dv01L = (pvL_par - pvL)/shock;
+  const dv01N = (pvN_par - pvN)/shock;
+
+  const sumTB = document.querySelector('#summaryTable tbody');
+  sumTB.innerHTML = '';
+  const addSumRow = (name, pv, pvp, dur, dv01) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${name}</td><td>${fmt(pv)}</td><td>${fmt(pvp)}</td><td>${fmt(dur)}</td><td>${fmt(dv01)}</td>`;
+    sumTB.appendChild(tr);
+  };
+  addSumRow('ASSET', pvA, pvA_par, durA, dv01A);
+  addSumRow('LIABILITY', pvL, pvL_par, durL, dv01L);
+  addSumRow('NET(ALM)', pvN, pvN_par, durN, dv01N);
+
+  const krdTB = document.querySelector('#krdTable tbody');
+  krdTB.innerHTML = '';
+  let netKrdSum = 0;
+  nodes.forEach(node => {
+    const bumped = bumpCurveAtNode(curve, node, shock);
+
+    const pvA_b = pvOf(asset, bumped);
+    const pvL_b = pvOf(liab,  bumped);
+    const pvN_b = pvA_b + pvL_b;
+
+    const krdA = isFinite(pvA)&& pvA!==0 ? - (pvA_b - pvA) / (pvA*shock) : NaN;
+    const krdL = isFinite(pvL)&& pvL!==0 ? - (pvL_b - pvL) / (pvL*shock) : NaN;
+    const krdN = isFinite(pvN)&& pvN!==0 ? - (pvN_b - pvN) / (pvN*shock) : NaN;
+
+    const dvA = (pvA_b - pvA)/shock;
+    const dvL = (pvL_b - pvL)/shock;
+    const dvN = (pvN_b - pvN)/shock;
+
+    const add = (seg, pvb, krd, dv) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${seg}</td><td>${node}</td><td>${fmt(pvb)}</td><td>${fmt(krd)}</td><td>${fmt(dv)}</td>`;
+      krdTB.appendChild(tr);
+    };
+    add('ASSET', pvA_b, krdA, dvA);
+    add('LIABILITY', pvL_b, krdL, dvL);
+    add('NET(ALM)', pvN_b, krdN, dvN);
+
+    if (isFinite(krdN)) netKrdSum += krdN;
+  });
+
+  const check = document.getElementById('checkRow');
+  check.textContent = `Kontrol: NET KRD toplamı = ${fmt(netKrdSum)}  |  NET Paralel Duration = ${fmt(durN)}`;
+}
+
+// ---------- Export / Import ----------
+function exportCSV(filename, rows){
+  const csv = rows.map(r => r.map(v => (v==null?'':(''+v).replace(/"/g,'""'))).map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function exportOutputs(){
+  const rowsS = [['Segment','PV_base','PV_parallel','Parallel_Duration','Parallel_DV01']];
+  document.querySelectorAll('#summaryTable tbody tr').forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    rowsS.push(Array.from(tds).map(td => td.textContent));
+  });
+  exportCSV('summary.csv', rowsS);
+  const rowsK = [['Segment','node_m','PV_bump','KRD','DV01_node']];
+  document.querySelectorAll('#krdTable tbody tr').forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    rowsK.push(Array.from(tds).map(td => td.textContent));
+  });
+  exportCSV('krd.csv', rowsK);
+}
+function saveInputs(){
+  const data = {
+    bp: parseNum(document.querySelector('#bp').value)||1,
+    keynodes: document.querySelector('#keynodes').value,
+    curve: readCurve(),
+    asset: readAsset(),
+    liab:  readLiab()
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'krd_inputs.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function loadInputs(){
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange = () => {
+    const f = inp.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const obj = JSON.parse(reader.result);
+        document.querySelector('#bp').value = obj.bp ?? 1;
+        document.querySelector('#keynodes').value = obj.keynodes ?? "12,24,36,60,84,120";
+        clearCurve();
+        (obj.curve||[]).forEach(o => addCurveRow(o.t, o.y));
+        const aIn = Array.from(document.querySelectorAll('#assetTable tbody input'));
+        aIn.forEach((el,i)=>{ el.value = (obj.asset||[])[i] ?? 0; });
+        const lIn = Array.from(document.querySelectorAll('#liabTable tbody input'));
+        lIn.forEach((el,i)=>{ el.value = (obj.liab||[])[i] ?? 0; });
+      }catch(e){ alert('JSON okunamadı.'); }
+    };
+    reader.readAsText(f);
+  };
+  inp.click();
+}
+
+// ---------- Init ----------
+buildMonthlyTables();
+loadSampleCurve();
+fillAssetZeros();
+fillLiabZeros();
+</script>
+</body>
+</html>
